@@ -47,8 +47,26 @@ var videoDownload = (function (Vue, extendAM){
                 setInterval(videoDownload.timeOut, 3000);
             },
             methods: {
+            
                 showAddTaskModal: function(){
                     this.modalData.add.url = '';
+                    this.showModal = true;
+                    this.modalType = 'addTask';
+                    console.log(this.modalData);
+                    this.$nextTick(function(){
+                        this.$refs.url.focus();
+                    });
+                },
+                hideAddTaskModal: function(){
+                    this.modalData.add.url = '';
+                    this.showModal = false;
+                    this.modalData.add.ydl_opts = {};
+
+                },
+                showAddTaskModalAudio: function(){
+                    this.modalData.add.url = '';
+                    this.modalData.add.ydl_opts = {'postprocessors' : [{'key': 'FFmpegExtractAudio'}],
+                                                   'format': 'bestaudio/best'};
                     this.showModal = true;
                     this.modalType = 'addTask';
                     console.log(this.modalData);
@@ -77,12 +95,8 @@ var videoDownload = (function (Vue, extendAM){
                 addTask: function(){
                     var _self = this;
                     var url = _self.headPath + 'task';
-                    for (var key in _self.modalData.add.ydl_opts) {
-                        if (_self.modalData.add.ydl_opts[key].trim() == '')
-                            delete _self.modalData.add.ydl_opts[key];
-                    }
                     Vue.http.post(url, _self.modalData.add, {emulateJSON: false}).then(function(res){
-                        _self.showModal = false;
+                        this.hideAddTaskModal();
                         that.getTaskList();
                     }, function(err){
                         _self.showAlertToast(err, 'error');
@@ -297,9 +311,32 @@ var videoDownload = (function (Vue, extendAM){
         that.createVm();
         that.getTaskList();
     }
+    
+    videoDownload.getHeadPath = function() {
+        return this.tasksData.headPath;
+    }
+    
+    videoDownload.getThat = function() {
+        return this;
+    }
 
     return videoDownload;
 })(Vue, {});
 
+function doAuth()
+{
+    var headPath = videoDownload.getHeadPath();
+    var url = headPath + 'auth';
+    var tokenKey = document.getElementById('token').value;
+    
+    var token = {'token': tokenKey};
+    Vue.http.post(url, token, {emulateJSON: false}).then(function(res){
+            window.location = "./";
+            
+        }, function(err){
+            var that = videoDownload.getThat();
+            that.vm.showAlertToast('Network connection lost', 'error');
+        });
+}
 
 videoDownload.init();
